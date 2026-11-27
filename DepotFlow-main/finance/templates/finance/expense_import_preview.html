@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Review Import - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-2">
+    <h1 class="text-2xl font-semibold">Review before importing</h1>
+</div>
+<p class="text-sm text-gray-600 mb-6">
+    {{ state.file_name }} &middot; sheet &ldquo;{{ state.sheet }}&rdquo; &middot; {{ depot.name }}
+    &middot; recorded as {{ state.payment_method }}{% if state.mark_approved %} &middot; marked approved{% else %} &middot; pending approval{% endif %}
+</p>
+
+{% if state.issues %}
+<div class="bg-red-50 border border-red-200 text-red-800 rounded p-4 mb-6 text-sm">
+    <p class="font-semibold mb-2">{{ state.issues|length }} problem{{ state.issues|length|pluralize }} in the sheet &mdash; nothing can be imported until they are fixed.</p>
+    <ul class="list-disc pl-5 space-y-1">
+        {% for issue in state.issues|slice:":30" %}<li><strong>{{ issue.ref }}</strong>: {{ issue.message }}</li>{% endfor %}
+    </ul>
+    {% if state.issues|length > 30 %}<p class="mt-2">&hellip; and {{ state.issues|length|add:"-30" }} more.</p>{% endif %}
+    <p class="mt-3">Fix them in Excel, then <a href="{% url 'finance:expense_import' %}" class="underline">upload the sheet again</a>.</p>
+</div>
+{% endif %}
+
+{% if state.notes %}
+<div class="bg-amber-50 border border-amber-200 text-amber-800 rounded p-4 mb-6 text-sm">
+    <ul class="list-disc pl-5 space-y-1">{% for note in state.notes %}<li>{{ note }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<div class="grid gap-4 sm:grid-cols-3 mb-6">
+    <div class="bg-white rounded shadow p-4">
+        <div class="text-xs uppercase text-gray-500">Will be imported</div>
+        <div class="text-2xl font-semibold">{{ classified.totals.count }}</div>
+        <div class="text-sm text-gray-600">&#8358;{{ classified.totals.amount|floatformat:"2g" }}</div>
+    </div>
+    <div class="bg-white rounded shadow p-4">
+        <div class="text-xs uppercase text-gray-500">Already in the app (skipped)</div>
+        <div class="text-2xl font-semibold">{{ skipped_total }}</div>
+    </div>
+    <div class="bg-white rounded shadow p-4">
+        <div class="text-xs uppercase text-gray-500">Differences to review</div>
+        <div class="text-2xl font-semibold">{{ conflicts|length }}</div>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="bg-white rounded shadow mb-6">
+        <div class="px-4 py-3 border-b font-semibold">1. Match sheet columns to expense categories</div>
+        <table class="w-full text-sm">
+            <thead class="text-left text-gray-500 text-xs uppercase">
+                <tr><th class="px-4 py-2">Sheet column</th><th class="px-4 py-2">Entries</th><th class="px-4 py-2 text-right">Total (&#8358;)</th><th class="px-4 py-2">Category in the app</th></tr>
+            </thead>
+            <tbody class="divide-y">
+            {% for m in mapping_rows %}
+                <tr>
+                    <td class="px-4 py-2 font-medium">{{ m.header }}</td>
+                    <td class="px-4 py-2">{{ m.count }}</td>
+                    <td class="px-4 py-2 text-right">{{ m.amount|floatformat:"2g" }}</td>
+                    <td class="px-4 py-2">
+                        <select name="map_{{ m.index }}" class="border rounded px-2 py-1 text-sm">
+                            <option value="new" {% if m.selected is None %}selected{% endif %}>Create new category &ldquo;{{ m.header }}&rdquo;</option>
+                            {% for c in categories %}
+                            <option value="{{ c.pk }}" {% if m.selected == c.pk %}selected{% endif %}>{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if m.match == "similar" %}<span class="text-xs text-amber-700 ml-2">looks like &ldquo;{{ m.suggested_name }}&rdquo; &mdash; check</span>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="bg-white rounded shadow mb-6">
+        <div class="px-4 py-3 border-b font-semibold">2. Totals by month &mdash; compare with the Total rows in your sheet</div>
+        <table class="w-full text-sm">
+            <thead class="text-left text-gray-500 text-xs uppercase">
+                <tr><th class="px-4 py-2">Month</th><th class="px-4 py-2">Expenses</th><th class="px-4 py-2 text-right">Total (&#8358;)</th></tr>
+            </thead>
+            <tbody class="divide-y">
+            {% for m in classified.by_month %}
+                <tr><td class="px-4 py-2">{{ m.month|date:"F Y" }}</td><td class="px-4 py-2">{{ m.count }}</td><td class="px-4 py-2 text-right">{{ m.amount|floatformat:"2g" }}</td></tr>
+            {% empty %}
+                <tr><td class="px-4 py-3 text-gray-500" colspan="3">Nothing new to import.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if conflicts %}
+    <div class="bg-white rounded shadow mb-6">
+        <div class="px-4 py-3 border-b font-semibold">3. Differences from what is already in the app</div>
+        <div class="px-4 py-3 text-sm text-gray-600">
+            Posted expenses are never edited. To use the sheet&rsquo;s figure, reverse the existing expense in the app, then upload the sheet again.
+        </div>
+        <table class="w-full text-sm">
+            <thead class="text-left text-gray-500 text-xs uppercase">
+                <tr><th class="px-4 py-2">Date</th><th class="px-4 py-2">Category</th><th class="px-4 py-2 text-right">Sheet (&#8358;)</th><th class="px-4 py-2 text-right">App (&#8358;)</th><th class="px-4 py-2">Why listed</th></tr>
+            </thead>
+            <tbody class="divide-y">
+            {% for c in conflicts|slice:":50" %}
+                <tr>
+                    <td class="px-4 py-2">{{ c.day|date:"d M Y" }}</td>
+                    <td class="px-4 py-2">{{ c.header }}</td>
+                    <td class="px-4 py-2 text-right">{{ c.amount_dec|floatformat:"2g" }}</td>
+                    <td class="px-4 py-2 text-right">{{ c.app_amount|floatformat:"2g" }}</td>
+                    <td class="px-4 py-2 text-xs">{% if c.status == "changed" %}Imported earlier; the sheet amount has changed{% else %}Entered in the app with a different amount{% endif %}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% if conflicts|length > 50 %}<div class="px-4 py-2 text-xs text-gray-500">Showing the first 50 of {{ conflicts|length }}.</div>{% endif %}
+        <label class="flex items-center gap-2 px-4 py-3 text-sm border-t">
+            <input type="checkbox" name="allow_overlap" {% if allow_overlap %}checked{% endif %}>
+            Also import the &ldquo;entered in the app with a different amount&rdquo; rows (only if they are genuinely separate expenses)
+        </label>
+    </div>
+    {% endif %}
+
+    <div class="flex items-center gap-3">
+        <button type="submit" name="action" value="confirm" {% if not can_confirm %}disabled{% endif %}
+                class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed">
+            Import {{ classified.totals.count }} expense{{ classified.totals.count|pluralize }}
+        </button>
+        <button type="submit" name="action" value="refresh" class="border px-4 py-2 rounded text-sm hover:bg-gray-50">Update preview</button>
+        <a href="{% url 'finance:expense_import_cancel' %}" class="text-sm text-gray-600 hover:underline">Cancel</a>
+    </div>
+    <p class="text-xs text-gray-500 mt-3">After changing a category or the checkbox, press &ldquo;Update preview&rdquo; to see the effect before importing.</p>
+</form>
+{% endblock %}

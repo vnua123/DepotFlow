@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{{ title }} - DepotFlow{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-6">{{ title }}</h1>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="bg-white p-6 rounded shadow max-w-2xl mb-6">
+        <h2 class="font-semibold mb-4">Load Details</h2>
+        {{ form|crispy }}
+    </div>
+
+    <div class="bg-white p-6 rounded shadow max-w-2xl" data-stock-hint data-salesman-field="id_salesman">
+        <h2 class="font-semibold mb-4">Items</h2>
+        <p class="text-xs text-gray-500 mb-4">
+            Stock is checked against the salesman's depot's current
+            balance when you save.
+        </p>
+
+        {% include "partials/dynamic_formset.html" with formset=formset add_label="Item" show_stock_hint=True %}
+    </div>
+
+    <div class="mt-6">
+        <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            Save Vehicle Load
+        </button>
+        <a href="{% url 'operations:load_list' %}" class="ml-2 text-sm text-gray-600 hover:underline">Cancel</a>
+    </div>
+</form>
+{% endblock %}

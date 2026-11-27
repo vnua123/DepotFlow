@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Team - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-2">
+    <h1 class="text-2xl font-semibold">Team</h1>
+    {% if can_create_users %}
+    <a href="{% url 'accounts:user_create' %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+        Add user
+    </a>
+    {% endif %}
+</div>
+<p class="text-sm text-gray-600 mb-6">
+    {% if user.depot %}Colleagues at {{ user.depot.name }}.{% elif user.territory %}Colleagues in {{ user.territory.name }}.{% else %}You're not assigned to a depot or territory.{% endif %}
+</p>
+
+<div class="bg-white rounded shadow divide-y">
+    {% for colleague in colleagues %}
+    <div class="px-4 py-3 flex items-center justify-between text-sm">
+        <span>{{ colleague.get_full_name|default:colleague.username }}</span>
+        <span class="text-gray-500">{{ colleague.get_role_display }}</span>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No colleagues found.</div>
+    {% endfor %}
+</div>
+{% endblock %}

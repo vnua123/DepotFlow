@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ load.load_number }} - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-2">
+    <h1 class="text-2xl font-semibold">{{ load.load_number }}</h1>
+    <div class="flex items-center gap-3">
+        {% if can_manage and not load.is_closed %}
+        <a href="{% url 'operations:load_close' load.pk %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            Close Load
+        </a>
+        {% endif %}
+    </div>
+</div>
+<p class="text-sm text-gray-600 mb-6">
+    {{ load.salesman.name }} &middot; {{ load.vehicle.registration_number }} &middot; {{ load.depot.name }} &middot; {{ load.load_date }}
+    &middot; <span class="{% if load.is_closed %}text-gray-500{% else %}text-green-700{% endif %}">
+        {% if load.is_closed %}Closed{% else %}Open{% endif %}
+    </span>
+</p>
+
+{% if is_overdue %}
+<div class="bg-depot-amber/10 border border-depot-amber/30 text-depot-amber text-sm rounded px-4 py-3 mb-4">
+    This load is still open from {{ load.load_date }}. It's fine to close it later than the
+    day it was created — but it must be closed (sales and any returns recorded) before a new
+    load can be opened for {{ load.salesman.name }}.
+</div>
+{% endif %}
+
+{% if reconciliation %}
+<div class="bg-white rounded shadow mb-6">
+    <h2 class="font-semibold px-4 pt-4">Reconciliation</h2>
+    <p class="text-xs text-gray-500 px-4 pt-1">
+        Every product must reach zero remaining before this load can be closed.
+    </p>
+    <div class="divide-y mt-2">
+        <div class="px-4 py-2 grid grid-cols-5 gap-4 text-xs font-medium text-gray-500 uppercase">
+            <span>Product</span>
+            <span>Loaded</span>
+            <span>Sold</span>
+            <span>Returned</span>
+            <span>Remaining</span>
+        </div>
+        {% for row in reconciliation %}
+        <div class="px-4 py-3 grid grid-cols-5 gap-4 text-sm items-center">
+            <span>{{ row.product.name }}</span>
+            <span>{{ row.loaded }}</span>
+            <span>{{ row.sold }}</span>
+            <span>{{ row.returned }}</span>
+            <span class="font-medium {% if row.remaining != 0 %}text-depot-brick{% else %}text-depot-moss{% endif %}">
+                {{ row.remaining }}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="bg-white rounded shadow divide-y mb-6">
+    <div class="px-4 py-2 grid grid-cols-5 gap-4 text-xs font-medium text-gray-500 uppercase">
+        <span>Product</span>
+        <span>Quantity</span>
+        <span>Effective Cost</span>
+        <span>Effective Price</span>
+        <span>Expected Profit</span>
+    </div>
+    {% for item in items %}
+    <div class="px-4 py-3 grid grid-cols-5 gap-4 text-sm items-center">
+        <span>{{ item.product.name }}</span>
+        <span>{{ item.quantity }}</span>
+        <span>&#8358;{{ item.effective_cost_price }}</span>
+        <span>&#8358;{{ item.effective_selling_price }}</span>
+        <span class="font-medium">&#8358;{{ item.expected_profit }}</span>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No items on this load.</div>
+    {% endfor %}
+</div>
+
+<div class="bg-white rounded shadow">
+    <h2 class="font-semibold px-4 pt-4">Returns</h2>
+    <div class="divide-y mt-2">
+        {% for vehicle_return in returns %}
+        <div class="px-4 py-3 flex items-center justify-between text-sm">
+            <a href="{% url 'operations:return_detail' vehicle_return.pk %}" class="hover:underline">
+                {{ vehicle_return.return_number }}
+            </a>
+            <span class="text-gray-500">
+                {{ vehicle_return.return_date }} &middot;
+                {% if vehicle_return.is_confirmed %}Confirmed{% else %}Pending{% endif %}
+            </span>
+        </div>
+        {% empty %}
+        <div class="px-4 py-6 text-gray-500 text-sm">No returns recorded yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

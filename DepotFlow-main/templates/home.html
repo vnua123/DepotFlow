@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Home - DepotFlow{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-semibold mb-1">Welcome, {{ user.get_full_name|default:user.username }}</h1>
+
+{% if nav_full_workflow %}
+<p class="text-stone-500 mb-8">Here's how stock moves through DepotFlow, from the depot to the sale.</p>
+
+<div class="lg:flex lg:items-stretch gap-3 mb-10">
+    <a href="{% url 'depots:depot_list' %}" class="flex-1 group block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <span class="font-display text-2xl text-depot-amber">1</span>
+        <h2 class="font-semibold mt-1">Depots</h2>
+        <p class="text-sm text-stone-500 mt-1">Set up the territories and depots the business runs through.</p>
+    </a>
+
+    <div class="hidden lg:flex items-center px-1 text-stone-300">
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+    </div>
+
+    <a href="{% url 'inventory:product_list' %}" class="flex-1 group block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <span class="font-display text-2xl text-depot-amber">2</span>
+        <h2 class="font-semibold mt-1">Inventory</h2>
+        <p class="text-sm text-stone-500 mt-1">{% if nav_is_depot_owner %}View products, suppliers, stock receipts, and promotions.{% else %}Products, suppliers, stock receipts, and promotions.{% endif %}</p>
+    </a>
+
+    <div class="hidden lg:flex items-center px-1 text-stone-300">
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+    </div>
+
+    <a href="{% url 'operations:load_list' %}" class="flex-1 group block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <span class="font-display text-2xl text-depot-amber">3</span>
+        <h2 class="font-semibold mt-1">Operations</h2>
+        <p class="text-sm text-stone-500 mt-1">Load vehicles, send them out, and process returns.</p>
+    </a>
+
+    <div class="hidden lg:flex items-center px-1 text-stone-300">
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+    </div>
+
+    <a href="{% url 'sales:sale_list' %}" class="flex-1 group block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <span class="font-display text-2xl text-depot-amber">4</span>
+        <h2 class="font-semibold mt-1">Sales</h2>
+        <p class="text-sm text-stone-500 mt-1">Record customer sales and finalize revenue.</p>
+    </a>
+
+    <div class="hidden lg:flex items-center px-1 text-stone-300">
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+    </div>
+
+    <a href="{% url 'finance:expense_list' %}" class="flex-1 group block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <span class="font-display text-2xl text-depot-amber">5</span>
+        <h2 class="font-semibold mt-1">Finance</h2>
+        <p class="text-sm text-stone-500 mt-1">Expenses, supplier payments/rebates, and the ledger.</p>
+    </a>
+</div>
+
+{% else %}
+<p class="text-stone-500 mb-8">Your quick links for today.</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+    {% if nav_show_depots %}
+    <a href="{% url 'depots:depot_list' %}" class="block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <h2 class="font-semibold">Depots</h2>
+        <p class="text-sm text-stone-500 mt-1">{% if nav_manage_territories %}Territories and depots in the business.{% else %}Depots within your territory.{% endif %}</p>
+    </a>
+    {% endif %}
+
+    {% if nav_show_inventory %}
+    <a href="{% url 'inventory:product_list' %}" class="block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <h2 class="font-semibold">Inventory</h2>
+        <p class="text-sm text-stone-500 mt-1">{% if nav_is_depot_owner %}View products, suppliers, stock receipts, and promotions.{% else %}Products, suppliers, stock receipts, and promotions.{% endif %}</p>
+    </a>
+    {% endif %}
+
+    {% if nav_show_operations %}
+    <a href="{% url 'operations:load_list' %}" class="block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <h2 class="font-semibold">Operations</h2>
+        <p class="text-sm text-stone-500 mt-1">{% if nav_is_depot_owner %}View vehicle loads, vehicles, salesmen, and targets.{% else %}Vehicle loads, vehicles, and salesmen.{% endif %}</p>
+    </a>
+    {% endif %}
+
+    {% if nav_show_sales %}
+    <a href="{% url 'sales:sale_list' %}" class="block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <h2 class="font-semibold">Sales</h2>
+        <p class="text-sm text-stone-500 mt-1">{% if nav_is_depot_owner %}View sales and customer records.{% else %}Record customer sales and manage customers.{% endif %}</p>
+    </a>
+    {% endif %}
+
+    {% if nav_show_finance_full %}
+    <a href="{% url 'finance:expense_list' %}" class="block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <h2 class="font-semibold">Finance</h2>
+        <p class="text-sm text-stone-500 mt-1">Expenses, supplier payments/rebates, and the ledger.</p>
+    </a>
+    {% elif nav_show_finance_expenses_only %}
+    <a href="{% url 'finance:expense_list' %}" class="block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <h2 class="font-semibold">Expenses</h2>
+        <p class="text-sm text-stone-500 mt-1">Record depot expenses.</p>
+    </a>
+    {% elif nav_show_finance_ledger_only %}
+    <a href="{% url 'finance:ledger_list' %}" class="block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <h2 class="font-semibold">Business Ledger</h2>
+        <p class="text-sm text-stone-500 mt-1">Financial activity across your territory's depots.</p>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<p class="text-sm text-stone-400 mb-3">Your workspace</p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <a href="{% url 'reports:dashboard' %}" class="block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <h2 class="font-semibold">Dashboard</h2>
+        <p class="text-sm text-stone-500 mt-1">Your KPIs for today, and how your depot or territory is doing.</p>
+    </a>
+    <a href="{% url 'accounts:profile' %}" class="block bg-white border border-stone-200 rounded-lg p-5 hover:border-depot-teal transition-colors">
+        <h2 class="font-semibold">My Account</h2>
+        <p class="text-sm text-stone-500 mt-1">Profile, password, and your team.</p>
+    </a>
+</div>
+{% endblock %}

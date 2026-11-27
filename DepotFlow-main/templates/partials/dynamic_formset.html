@@ -1,0 +1,38 @@
+{% load crispy_forms_tags %}
+<div data-formset data-formset-prefix="{{ formset.prefix }}">
+    {{ formset.management_form }}
+
+    <template data-formset-empty-form>
+        <div class="formset-card border border-stone-200 rounded-lg p-4 relative">
+            <button type="button" data-formset-remove
+                    class="absolute top-3 right-3 text-xs text-depot-brick hover:underline">
+                Remove
+            </button>
+            {{ formset.empty_form|crispy }}
+            {% if show_stock_hint %}
+            <p class="text-xs text-stone-500 mt-1" data-stock-hint-text></p>
+            {% endif %}
+        </div>
+    </template>
+
+    <div data-formset-body class="space-y-4">
+        {% for item_form in formset %}
+        <div class="formset-card border border-stone-200 rounded-lg p-4 relative">
+            <button type="button" data-formset-remove
+                    class="absolute top-3 right-3 text-xs text-depot-brick hover:underline">
+                Remove
+            </button>
+            {{ item_form|crispy }}
+            {% if show_stock_hint %}
+            <p class="text-xs text-stone-500 mt-1" data-stock-hint-text></p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <button type="button" data-formset-add
+            class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-depot-teal hover:text-depot-teal-light">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+        Add {{ add_label|default:"Item" }}
+    </button>
+</div>

@@ -1,0 +1,124 @@
+{# Depot Owner overview. "Live" figures are calculated now; "As of" figures come from a saved record. #}
+{% if o.alerts %}
+<div class="bg-amber-50 border border-amber-200 text-amber-900 rounded p-4 mb-6 text-sm">
+    <ul class="space-y-1">
+        {% for alert in o.alerts %}<li>&bull; {{ alert }}{% if forloop.first and o.live.pending_expense_count %} &mdash; <a href="{% url 'finance:expense_list' %}" class="underline">review</a>{% endif %}</li>{% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<h2 class="font-semibold text-lg mb-1">Working capital</h2>
+{% if o.working_capital %}
+{% with wc=o.working_capital %}
+<p class="text-xs text-gray-500 mb-3">
+    As of the {{ wc.period|date:"F Y" }} health check, saved {{ wc.recorded_on|date:"d M Y" }}.
+    {% if wc.is_stale %}<span class="text-amber-700">It is more than a month old.</span>{% endif %}
+</p>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div class="bg-white p-5 rounded shadow min-w-0">
+        <p class="text-sm text-gray-500">Total working capital</p>
+        <p class="text-2xl font-semibold break-all">&#8358;{{ wc.total|floatformat:"2g" }}</p>
+        {% if wc.change is not None %}
+        <p class="text-xs mt-1 {% if wc.change < 0 %}text-red-600{% else %}text-green-700{% endif %}">
+            {% if wc.change >= 0 %}+{% endif %}&#8358;{{ wc.change|floatformat:"2g" }} since {{ wc.previous_period|date:"F Y" }}
+        </p>
+        {% endif %}
+    </div>
+    <div class="bg-white p-5 rounded shadow min-w-0">
+        <p class="text-sm text-gray-500">Your own working capital</p>
+        <p class="text-2xl font-semibold break-all">&#8358;{{ wc.operator_owned|floatformat:"2g" }}</p>
+        <p class="text-xs text-gray-500 mt-1">{% if wc.equity_percent is not None %}{{ wc.equity_percent|floatformat:1 }}% of total{% endif %}</p>
+    </div>
+    <div class="bg-white p-5 rounded shadow min-w-0">
+        <p class="text-sm text-gray-500">NBC credit</p>
+        <p class="text-2xl font-semibold break-all">&#8358;{{ wc.credit_exposure|floatformat:"2g" }}</p>
+        <p class="text-xs text-gray-500 mt-1">
+            exposure balance &middot;
+            {% if wc.credit_utilization is not None %}{{ wc.credit_utilization|floatformat:1 }}% of the limit{% else %}no credit limit recorded{% endif %}
+        </p>
+    </div>
+</div>
+<div class="bg-white rounded shadow divide-y mb-8 text-sm">
+    <div class="px-4 py-3 flex justify-between"><span>Settled stock in the warehouse ({{ wc.stock_cases|floatformat:"0g" }} cases)</span><span>&#8358;{{ wc.stock_value|floatformat:"2g" }}</span></div>
+    <div class="px-4 py-3 flex justify-between"><span>Cash at hand</span><span>&#8358;{{ wc.cash|floatformat:"2g" }}</span></div>
+    <div class="px-4 py-3 flex justify-between"><span>GIT / order released ({{ wc.git_cases|floatformat:"0g" }} cases)</span><span>&#8358;{{ wc.git|floatformat:"2g" }}</span></div>
+    {% if wc.empties_quantity or wc.plastic_quantity %}
+    <div class="px-4 py-3 flex justify-between text-gray-600"><span>Empties / plastic (not in the total)</span><span>{{ wc.empties_quantity|floatformat:"0g" }} / {{ wc.plastic_quantity|floatformat:"0g" }}</span></div>
+    {% endif %}
+    <div class="px-4 py-3 flex justify-between text-gray-600">
+        <span>Stock in the app right now compared with the health check</span>
+        <span class="{% if wc.stock_change_since_check < 0 %}text-red-600{% else %}text-green-700{% endif %}">{% if wc.stock_change_since_check >= 0 %}+{% endif %}&#8358;{{ wc.stock_change_since_check|floatformat:"2g" }}</span>
+    </div>
+</div>
+{% endwith %}
+{% else %}
+<div class="bg-white p-5 rounded shadow text-sm text-gray-500 mb-8">No monthly health check has been recorded for this depot yet.</div>
+{% endif %}
+
+<h2 class="font-semibold text-lg mb-1">Right now</h2>
+<p class="text-xs text-gray-500 mb-3">Live &mdash; calculated from the app as of {{ o.as_of|date:"d M Y" }}.</p>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white p-5 rounded shadow min-w-0">
+        <p class="text-sm text-gray-500">Stock in the warehouse</p>
+        <p class="text-xl font-semibold break-all">&#8358;{{ o.live.stock_value|floatformat:"2g" }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ o.live.stock_units }} units &middot; {{ o.live.stock_skus }} products</p>
+    </div>
+    <div class="bg-white p-5 rounded shadow min-w-0">
+        <p class="text-sm text-gray-500">Stock on open vehicle loads</p>
+        <p class="text-xl font-semibold break-all">&#8358;{{ o.live.on_trucks.value|floatformat:"2g" }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ o.live.on_trucks.units }} units &middot; {{ o.live.open_loads }} open load{{ o.live.open_loads|pluralize }}{% if o.live.overdue_loads %} ({{ o.live.overdue_loads }} from earlier days){% endif %}</p>
+    </div>
+    <div class="bg-white p-5 rounded shadow min-w-0">
+        <p class="text-sm text-gray-500">Stock in total</p>
+        <p class="text-xl font-semibold break-all">&#8358;{{ o.live.total_stock_value|floatformat:"2g" }}</p>
+        <p class="text-xs text-gray-500 mt-1">warehouse + on the trucks, at cost</p>
+    </div>
+    <div class="bg-white p-5 rounded shadow min-w-0">
+        <p class="text-sm text-gray-500">Expenses awaiting approval</p>
+        <p class="text-xl font-semibold break-all">{{ o.live.pending_expense_count }}</p>
+        <p class="text-xs text-gray-500 mt-1">&#8358;{{ o.live.pending_expense_total|floatformat:"2g" }}</p>
+    </div>
+</div>
+
+<h2 class="font-semibold text-lg mb-1">{{ o.month.start|date:"F Y" }} so far</h2>
+<p class="text-xs text-gray-500 mb-3">Live, from {{ o.month.start|date:"d M" }} to {{ o.as_of|date:"d M" }}.</p>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+    <div class="bg-white p-5 rounded shadow min-w-0"><p class="text-sm text-gray-500">Sales</p><p class="text-xl font-semibold break-all">&#8358;{{ o.month.revenue|floatformat:"2g" }}</p><p class="text-xs text-gray-500 mt-1">{{ o.month.units_sold }} units &middot; margin &#8358;{{ o.month.gross_margin|floatformat:"2g" }}</p></div>
+    <div class="bg-white p-5 rounded shadow min-w-0"><p class="text-sm text-gray-500">Expenses</p><p class="text-xl font-semibold break-all">&#8358;{{ o.month.expenses|floatformat:"2g" }}</p></div>
+    <div class="bg-white p-5 rounded shadow min-w-0"><p class="text-sm text-gray-500">NBC rebates received</p><p class="text-xl font-semibold break-all">&#8358;{{ o.month.rebates_received|floatformat:"2g" }}</p>
+        <p class="text-xs text-gray-500 mt-1">
+            {% if o.month.expected_rebate is not None %}expected &#8358;{{ o.month.expected_rebate|floatformat:"2g" }} (as of {{ o.month.expected_rebate_as_of|date:"d M" }})
+            {% else %}expected rebate not calculated yet{% endif %}
+        </p></div>
+    <div class="bg-white p-5 rounded shadow min-w-0"><p class="text-sm text-gray-500">Net profit</p><p class="text-xl font-semibold break-all {% if o.month.net_profit < 0 %}text-red-600{% else %}text-green-700{% endif %}">&#8358;{{ o.month.net_profit|floatformat:"2g" }}</p>
+        <p class="text-xs text-gray-500 mt-1">rebates received less expenses</p></div>
+</div>
+<div class="bg-white rounded shadow divide-y mb-8 text-sm">
+    <div class="px-4 py-3 flex justify-between"><span>Reinvestment required so far ({{ o.month.reinvestment_target_percent|floatformat:"-2" }}% of net profit)</span><strong>&#8358;{{ o.month.required_reinvestment_to_date|floatformat:"2g" }}</strong></div>
+    {% for row in o.month.top_expense_categories %}
+    <div class="px-4 py-2 flex justify-between text-gray-600"><span>{{ row.category__name }}</span><span>&#8358;{{ row.total|floatformat:"2g" }}</span></div>
+    {% endfor %}
+</div>
+
+<h2 class="font-semibold text-lg mb-1">Reinvestment</h2>
+<p class="text-xs text-gray-500 mb-3">Net profit = NBC rebates received less expenses. Reinvested = the rise in total working capital from that month&rsquo;s health check to the next one, so each month is confirmed when the following health check is saved.</p>
+<div class="bg-white rounded shadow mb-8 overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead class="text-left text-gray-500 text-xs uppercase">
+            <tr><th class="px-4 py-2">Month</th><th class="px-4 py-2 text-right">Net profit</th><th class="px-4 py-2 text-right">Required</th><th class="px-4 py-2 text-right">Reinvested</th><th class="px-4 py-2">Status</th></tr>
+        </thead>
+        <tbody class="divide-y">
+        {% for r in o.reinvestment %}
+            <tr>
+                <td class="px-4 py-2">{{ r.period|date:"F Y" }}</td>
+                <td class="px-4 py-2 text-right">&#8358;{{ r.net_profit|floatformat:"2g" }}</td>
+                <td class="px-4 py-2 text-right">&#8358;{{ r.required|floatformat:"2g" }} <span class="text-gray-400">({{ r.target_percent|floatformat:"-2" }}%)</span></td>
+                <td class="px-4 py-2 text-right">{% if r.observed is not None %}&#8358;{{ r.observed|floatformat:"2g" }}{% else %}&mdash;{% endif %}</td>
+                <td class="px-4 py-2">{% if r.status == "pending" %}<span class="text-gray-500">Waiting for the next health check</span>{% elif r.status == "no_profit" %}<span class="text-gray-500">No profit to reinvest</span>{% elif r.status == "below" %}<span class="text-red-600">Below target</span>{% else %}<span class="text-green-700">Met</span>{% endif %}</td>
+            </tr>
+        {% empty %}
+            <tr><td class="px-4 py-3 text-gray-500" colspan="5">No reinvestment targets have been recorded yet.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

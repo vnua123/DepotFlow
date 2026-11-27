@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ depot.name }} - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">{{ depot.name }}</h1>
+    {% if can_edit_depot %}<a href="{% url 'depots:depot_update' depot.pk %}" class="text-sm text-slate-600 hover:underline">Edit</a>{% endif %}
+</div>
+
+<div class="bg-white rounded shadow p-6 space-y-4 max-w-lg">
+    <div>
+        <span class="text-gray-500 text-sm">Code</span>
+        <div>{{ depot.code }}</div>
+    </div>
+    <div>
+        <span class="text-gray-500 text-sm">Territory</span>
+        <div>{{ depot.territory.name }}</div>
+    </div>
+    <div>
+        <span class="text-gray-500 text-sm">Address</span>
+        <div>{{ depot.address|default:"—" }}</div>
+    </div>
+</div>
+{% endblock %}

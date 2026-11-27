@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Monthly Profitability | DepotFlow{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <a class="text-sm text-depot-teal" href="{% url 'rebates:dashboard' %}">← Back to NBC rebates</a>
+  <h1 class="text-3xl font-bold mt-3 mb-2">Month-End Reinvestment Target</h1>
+  <p class="text-stone-600 mb-6">Commercial Manager only. The system calculates net profit as NBC rebates actually recorded as received minus non-reversed business expenses for the selected month. Set the minimum reinvestment percentage. The system assesses reinvestment at the end of the following month by comparing that month's health check with the selected profit month's health check.</p>
+  <form method="post" class="bg-white border rounded-xl p-6">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="text-red-700 mb-3">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="grid md:grid-cols-2 gap-4">
+      {% for field in form %}
+      <div class="{% if field.name == 'notes' %}md:col-span-2{% endif %}">
+        {% if field.field.widget.input_type == 'hidden' %}{{ field }}{% else %}<label class="block text-sm font-medium mb-1" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+        {% for error in field.errors %}<p class="text-sm text-red-700">{{ error }}</p>{% endfor %}
+        {% if field.help_text %}<p class="text-xs text-stone-500 mt-1">{{ field.help_text }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <style>form input,form select,form textarea{width:100%;border:1px solid #d6d3d1;border-radius:.375rem;padding:.55rem .7rem}form input[type=checkbox]{width:auto}</style>
+    <div class="mt-6 flex flex-wrap gap-3"><button class="rounded-md bg-depot-teal px-5 py-2 text-white font-semibold" type="submit">Save month-end review</button><a class="rounded-md border px-5 py-2" href="{% url 'rebates:dashboard' %}">Cancel</a></div>
+  </form>
+</div>
+{% endblock %}

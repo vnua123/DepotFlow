@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}My Loads - DepotFlow{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-6">My Loads</h1>
+
+{% if not salesman %}
+<div class="bg-white border border-stone-200 rounded-lg p-6 text-sm text-stone-600">
+    Your account isn't linked to a salesman profile yet, so there are no loads to show here.
+    Ask a Depot Manager, Distribution Manager, or Super Admin to link your login from the Salesmen page.
+</div>
+{% else %}
+
+{% if target_progress.has_target %}
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white border border-stone-200 rounded-lg p-4">
+        <p class="text-xs text-stone-500">Monthly Target</p>
+        <p class="text-xl font-semibold">{{ target_progress.target_quantity }}</p>
+    </div>
+    <div class="bg-white border border-stone-200 rounded-lg p-4">
+        <p class="text-xs text-stone-500">Daily Target</p>
+        <p class="text-xl font-semibold">{{ target_progress.daily_target|floatformat:1 }}</p>
+    </div>
+    <div class="bg-white border border-stone-200 rounded-lg p-4">
+        <p class="text-xs text-stone-500">Weekly Target</p>
+        <p class="text-xl font-semibold">{{ target_progress.weekly_target|floatformat:1 }}</p>
+    </div>
+    <div class="bg-white border border-stone-200 rounded-lg p-4">
+        <p class="text-xs text-stone-500">Sold This Month</p>
+        <p class="text-xl font-semibold">{{ target_progress.sold_quantity }}</p>
+    </div>
+</div>
+<p class="text-sm mb-8">
+    Balance:
+    <span class="font-semibold {% if target_progress.balance > 0 %}text-depot-brick{% else %}text-depot-moss{% endif %}">
+        {% if target_progress.balance > 0 %}
+            {{ target_progress.balance }} units still needed to hit this month's target
+        {% else %}
+            Target reached — {{ target_progress.balance|cut:"-" }} units over
+        {% endif %}
+    </span>
+</p>
+{% else %}
+<div class="bg-white border border-stone-200 rounded-lg p-4 mb-8 text-sm text-stone-500">
+    No sales target has been set for you this month yet.
+</div>
+{% endif %}
+
+<h2 class="font-semibold mb-3">Loads</h2>
+<div class="bg-white rounded shadow divide-y">
+    {% for load in loads %}
+    <div class="px-4 py-3 flex items-center justify-between">
+        <div>
+            <a href="{% url 'operations:load_detail' load.pk %}" class="font-medium hover:underline">{{ load.load_number }}</a>
+            <span class="text-sm text-gray-500 ml-2">{{ load.depot.name }} &middot; {{ load.vehicle.registration_number }} &middot; {{ load.load_date }}</span>
+        </div>
+        <span class="text-sm {% if load.is_closed %}text-gray-400{% else %}text-green-700{% endif %}">
+            {% if load.is_closed %}Closed{% else %}Open{% endif %}
+        </span>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No loads assigned to you yet.</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

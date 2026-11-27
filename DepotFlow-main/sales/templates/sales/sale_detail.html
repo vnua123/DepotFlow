@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ sale.sale_number }} - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-2">
+    <h1 class="text-2xl font-semibold">{{ sale.sale_number }}</h1>
+    {% if can_manage and not sale.is_finalized %}
+    <form method="post" action="{% url 'sales:sale_finalize' sale.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            Finalize Sale
+        </button>
+    </form>
+    {% endif %}
+</div>
+<p class="text-sm text-gray-600 mb-6">
+    Load {{ sale.vehicle_load.load_number }} &middot; {{ sale.salesman.name }}
+    {% if sale.customer %} &middot; {{ sale.customer.name }}{% endif %}
+    &middot; {{ sale.sale_date }}
+    &middot; <span class="{% if sale.is_finalized %}text-green-700{% else %}text-amber-600{% endif %}">
+        {% if sale.is_finalized %}Finalized{% else %}Draft — not yet posted to the ledger{% endif %}
+    </span>
+</p>
+
+<div class="bg-white rounded shadow divide-y mb-6">
+    <div class="px-4 py-2 grid grid-cols-5 gap-4 text-xs font-medium text-gray-500 uppercase">
+        <span>Product</span>
+        <span>Quantity</span>
+        <span>Unit Price</span>
+        <span>Discount</span>
+        <span>Line Profit</span>
+    </div>
+    {% for item in items %}
+    <div class="px-4 py-3 grid grid-cols-5 gap-4 text-sm items-center">
+        <span>{{ item.product.name }}</span>
+        <span>{{ item.quantity }}</span>
+        <span>&#8358;{{ item.unit_price }}</span>
+        <span>&#8358;{{ item.discount_applied }}</span>
+        <span class="font-medium">&#8358;{{ item.line_profit }}</span>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No items on this sale.</div>
+    {% endfor %}
+</div>
+
+<div class="bg-white rounded shadow p-6 max-w-md space-y-2">
+    <div class="flex justify-between text-sm"><span class="text-gray-500">Total Revenue</span><span>&#8358;{{ sale.total_revenue }}</span></div>
+    <div class="flex justify-between text-sm"><span class="text-gray-500">Total Cost</span><span>&#8358;{{ sale.total_cost }}</span></div>
+    <div class="flex justify-between font-semibold"><span>Total Profit</span><span>&#8358;{{ sale.total_profit }}</span></div>
+</div>
+{% endblock %}

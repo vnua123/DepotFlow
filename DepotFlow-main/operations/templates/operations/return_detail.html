@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ vehicle_return.return_number }} - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-2">
+    <h1 class="text-2xl font-semibold">{{ vehicle_return.return_number }}</h1>
+    {% if can_manage and not vehicle_return.is_confirmed %}
+    <form method="post" action="{% url 'operations:return_confirm' vehicle_return.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            Confirm Return
+        </button>
+    </form>
+    {% endif %}
+</div>
+<p class="text-sm text-gray-600 mb-6">
+    Load {{ vehicle_return.vehicle_load.load_number }} &middot; {{ vehicle_return.return_date }}
+    &middot; <span class="{% if vehicle_return.is_confirmed %}text-green-700{% else %}text-amber-600{% endif %}">
+        {% if vehicle_return.is_confirmed %}Confirmed{% else %}Pending confirmation{% endif %}
+    </span>
+</p>
+
+<div class="bg-white rounded shadow divide-y">
+    <div class="px-4 py-2 grid grid-cols-4 gap-4 text-xs font-medium text-gray-500 uppercase">
+        <span>Product</span>
+        <span>Quantity</span>
+        <span>Condition</span>
+        <span>Notes</span>
+    </div>
+    {% for item in items %}
+    <div class="px-4 py-3 grid grid-cols-4 gap-4 text-sm items-center">
+        <span>{{ item.product.name }}</span>
+        <span>{{ item.quantity }}</span>
+        <span>{{ item.get_condition_display }}</span>
+        <span class="text-gray-500">{{ item.notes|default:"—" }}</span>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No items on this return.</div>
+    {% endfor %}
+</div>
+{% endblock %}

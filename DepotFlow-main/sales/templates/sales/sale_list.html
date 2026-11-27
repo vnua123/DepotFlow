@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Sales - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6"><h1 class="text-2xl font-semibold">Sales</h1></div>
+<div class="bg-white rounded shadow divide-y">{% for sale in sales %}<div class="px-4 py-3 flex items-center justify-between"><div><a href="{% url 'sales:sale_detail' sale.pk %}" class="font-medium hover:underline">{{ sale.sale_number }}</a><span class="text-sm text-gray-500 ml-2">{{ sale.salesman.name }}{% if sale.customer %} &middot; {{ sale.customer.name }}{% endif %} &middot; {{ sale.sale_date }}</span></div><span class="text-sm {% if sale.is_finalized %}text-green-700{% else %}text-amber-600{% endif %}">{% if sale.is_finalized %}Finalized{% else %}Draft{% endif %}</span></div>{% empty %}<div class="px-4 py-6 text-gray-500 text-sm">No sales recorded yet. Start one from a vehicle load's page.</div>{% endfor %}</div>
+{% endblock %}

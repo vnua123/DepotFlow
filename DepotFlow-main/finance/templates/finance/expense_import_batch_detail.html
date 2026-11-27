@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Expense Import - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-2">
+    <h1 class="text-2xl font-semibold">{{ batch.file_name }}</h1>
+    <a href="{% url 'finance:expense_import_batch_list' %}" class="text-sm text-slate-600 hover:underline">All imports</a>
+</div>
+<p class="text-sm text-gray-600 mb-6">
+    {{ batch.depot.name }} &middot; uploaded {{ batch.created_at|date:"d M Y H:i" }} by {{ batch.uploaded_by|default:"—" }}
+    &middot; sheet &ldquo;{{ batch.sheet_name }}&rdquo; &middot; recorded as {{ batch.payment_method }}
+    {% if batch.date_from %}&middot; {{ batch.date_from|date:"d M Y" }} to {{ batch.date_to|date:"d M Y" }}{% endif %}
+</p>
+
+<div class="grid gap-4 sm:grid-cols-4 mb-6">
+    <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">Live expenses</div><div class="text-2xl font-semibold">{{ live_count }}</div><div class="text-sm text-gray-600">&#8358;{{ live_total|floatformat:"2g" }}</div></div>
+    <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">Pending approval</div><div class="text-2xl font-semibold">{{ pending_count }}</div></div>
+    <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">Reversed</div><div class="text-2xl font-semibold">{{ reversed_count }}</div></div>
+    <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">Skipped at import</div><div class="text-2xl font-semibold">{{ batch.rows_skipped }}</div></div>
+</div>
+
+<div class="bg-white rounded shadow mb-6">
+    <div class="px-4 py-3 border-b font-semibold">Totals by month</div>
+    <table class="w-full text-sm">
+        <tbody class="divide-y">
+        {% for m in by_month %}
+            <tr><td class="px-4 py-2">{{ m.month|date:"F Y" }}</td><td class="px-4 py-2">{{ m.count }}</td><td class="px-4 py-2 text-right">&#8358;{{ m.total|floatformat:"2g" }}</td></tr>
+        {% empty %}
+            <tr><td class="px-4 py-3 text-gray-500">No live expenses.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if can_approve %}
+<div class="flex items-center gap-3">
+    {% if pending_count %}
+    <form method="post" action="{% url 'finance:expense_import_batch_approve' batch.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">Approve all {{ pending_count }} pending</button>
+    </form>
+    {% endif %}
+    {% if live_count %}
+    <a href="{% url 'finance:expense_import_batch_reverse' batch.pk %}" class="text-sm text-red-600 hover:underline">Reverse whole import</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

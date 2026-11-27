@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Expenses - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Expenses</h1>
+    <div class="flex items-center gap-3">
+        <!-- <a href="{% url 'finance:supplier_payment_list' %}" class="text-sm text-slate-600 hover:underline">Supplier Payments</a>
+        <a href="{% url 'finance:supplier_rebate_list' %}" class="text-sm text-slate-600 hover:underline">Supplier Rebates</a>
+        <a href="{% url 'finance:ledger_list' %}" class="text-sm text-slate-600 hover:underline">Business Ledger</a> -->
+        {% if can_record %}<a href="{% url 'finance:expense_import' %}" class="text-sm text-slate-600 hover:underline">Import from Excel</a>{% endif %}
+        {% if can_record %}<a href="{% url 'finance:expense_create' %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            New Expense
+        </a>{% endif %}
+    </div>
+</div>
+
+<div class="bg-white rounded shadow divide-y">
+    {% for expense in expenses %}
+    <div class="px-4 py-3 flex items-center justify-between">
+        <div>
+            <span class="font-medium">{{ expense.reference_number }}</span>
+            <span class="text-sm text-gray-500 ml-2">
+                {{ expense.category.name }} &middot; {{ expense.depot.name }} &middot; {{ expense.expense_date }}
+                &middot; &#8358;{{ expense.amount }}
+            </span>
+        </div>
+        <div class="flex items-center gap-3 text-sm">
+            {% if expense.is_reversed %}
+                <span class="text-gray-400">Reversed</span>
+            {% else %}
+                {% if expense.approved %}
+                    <span class="text-green-700">Approved</span>
+                {% elif can_approve %}
+                    <form method="post" action="{% url 'finance:expense_approve' expense.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="text-slate-600 hover:underline">Approve</button>
+                    </form>
+                {% else %}
+                    <span class="text-amber-600">Pending</span>
+                {% endif %}
+                {% if can_approve %}
+                    <a href="{% url 'finance:expense_reverse' expense.pk %}" class="text-red-600 hover:underline">Reverse</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No expenses recorded yet.</div>
+    {% endfor %}
+</div>
+
+{% if expenses.paginator.num_pages > 1 %}
+<div class="flex items-center justify-between mt-4 text-sm text-gray-600">
+    <span>Page {{ expenses.number }} of {{ expenses.paginator.num_pages }} &middot; {{ expenses.paginator.count }} expenses</span>
+    <div class="flex items-center gap-3">
+        {% if expenses.has_previous %}<a href="?page={{ expenses.previous_page_number }}" class="hover:underline">&larr; Newer</a>{% endif %}
+        {% if expenses.has_next %}<a href="?page={{ expenses.next_page_number }}" class="hover:underline">Older &rarr;</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Add User - DepotFlow{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-2">Add User</h1>
+<p class="text-sm text-gray-600 mb-6 max-w-lg">
+    You can create users with a role below yours. Salesman logins are
+    created from Operations &rarr; Salesmen.
+</p>
+<div class="bg-white p-6 rounded shadow max-w-lg">
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="mt-4 bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            Create user
+        </button>
+        <a href="{% url 'accounts:team_list' %}" class="ml-2 text-sm text-gray-600 hover:underline">Cancel</a>
+    </form>
+</div>
+{% endblock %}

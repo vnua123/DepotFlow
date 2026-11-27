@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}My Profile - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">My Profile</h1>
+    <div class="flex items-center gap-3">
+        <a href="{% url 'accounts:profile_edit' %}" class="text-sm text-slate-600 hover:underline">Edit Profile</a>
+        <a href="{% url 'accounts:password_change' %}" class="text-sm text-slate-600 hover:underline">Change Password</a>
+    </div>
+</div>
+
+<div class="bg-white rounded shadow p-6 max-w-lg space-y-3">
+    <div><span class="text-gray-500 text-sm">Username</span><div>{{ user.username }}</div></div>
+    <div><span class="text-gray-500 text-sm">Full Name</span><div>{{ user.get_full_name|default:"—" }}</div></div>
+    <div><span class="text-gray-500 text-sm">Email</span><div>{{ user.email|default:"—" }}</div></div>
+    <div><span class="text-gray-500 text-sm">Phone</span><div>{{ user.phone|default:"—" }}</div></div>
+    <div><span class="text-gray-500 text-sm">Role</span><div>{{ user.get_role_display }}</div></div>
+    <div><span class="text-gray-500 text-sm">Depot</span><div>{{ user.depot.name|default:"—" }}</div></div>
+    <div><span class="text-gray-500 text-sm">Territory</span><div>{{ user.territory.name|default:"—" }}</div></div>
+</div>
+
+<p class="text-xs text-gray-500 mt-4 max-w-lg">
+    Role, depot, and territory are assigned by an administrator and
+    can't be changed here.
+</p>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - DepotFlow{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-semibold mb-6">Dashboard</h1>
+
+{% if depot_sales %}
+    {# Depot Manager / Depot Officer: figures for their own depot over a chosen timeframe #}
+    <p class="text-sm text-gray-500 mb-1">{{ request.user.depot.name }}</p>
+    {% if owner_overview %}{% include "reports/_owner_overview.html" with o=owner_overview %}{% endif %}
+    {% include "partials/date_range_form.html" %}
+
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white p-5 rounded shadow min-w-0">
+            <p class="text-sm text-gray-500">Units Sold</p>
+            <p class="text-2xl font-semibold break-all">{{ depot_sales.total_quantity }}</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow min-w-0">
+            <p class="text-sm text-gray-500">Expenses</p>
+            <p class="text-2xl font-semibold break-all">&#8358;{{ depot_net_profit.total_expenses }}</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow min-w-0">
+            <p class="text-sm text-gray-500">Supplier Rebates</p>
+            <p class="text-2xl font-semibold break-all">&#8358;{{ depot_net_profit.total_rebates }}</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow min-w-0">
+            <p class="text-sm text-gray-500">Net Profit</p>
+            <p class="text-2xl font-semibold break-all {% if depot_net_profit.net_profit < 0 %}text-red-600{% else %}text-green-700{% endif %}">
+                &#8358;{{ depot_net_profit.net_profit }}
+            </p>
+        </div>
+    </div>
+
+    <h2 class="font-semibold text-lg mb-3">Sales by Product ({{ date_from }} to {{ date_to }})</h2>
+    <div class="bg-white rounded shadow divide-y mb-8">
+        {% for row in depot_sales.by_product %}
+        <div class="px-4 py-3 flex items-center justify-between text-sm">
+            <span>{{ row.product__name }} <span class="text-gray-400">({{ row.product__sku }})</span></span>
+            <span class="text-gray-600">{{ row.quantity }} units &middot; &#8358;{{ row.revenue }}</span>
+        </div>
+        {% empty %}
+        <div class="px-4 py-6 text-gray-500 text-sm">No sales finalized in this period.</div>
+        {% endfor %}
+    </div>
+
+    <h2 class="font-semibold text-lg mb-3">Salesmen — {{ month_start|date:"F" }} Target Progress</h2>
+    <div class="bg-white rounded shadow divide-y">
+        {% for row in salesmen_progress %}
+        <div class="px-4 py-3 flex items-center justify-between text-sm">
+            <span class="font-medium">{{ row.salesman }}</span>
+            {% if row.has_target %}
+            <span class="text-gray-600">
+                {{ row.sold_quantity }} / {{ row.target_quantity }} units
+                <span class="ml-2 {% if row.balance > 0 %}text-depot-brick{% else %}text-depot-moss{% endif %}">
+                    {% if row.balance > 0 %}{{ row.balance }} short{% else %}target met{% endif %}
+                </span>
+            </span>
+            {% else %}
+            <span class="text-gray-400">No target set</span>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="px-4 py-6 text-gray-500 text-sm">No active salesmen at this depot.</div>
+        {% endfor %}
+    </div>
+
+{% elif my_target_progress or no_salesman_profile %}
+    {# Salesman: their own current-month target progress and open loads #}
+    {% if no_salesman_profile %}
+    <div class="bg-white p-6 rounded shadow text-sm text-gray-600">
+        Your account isn't linked to a salesman profile yet, so there's no personal target to
+        show. Ask a Depot Manager, Distribution Manager, or Super Admin to link your login from the Salesmen page.
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-500 mb-4">{{ month_start|date:"F Y" }}</p>
+
+    {% if my_target_progress.has_target %}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white p-5 rounded shadow">
+            <p class="text-sm text-gray-500">Monthly Target</p>
+            <p class="text-2xl font-semibold">{{ my_target_progress.target_quantity }}</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow">
+            <p class="text-sm text-gray-500">Sold So Far</p>
+            <p class="text-2xl font-semibold">{{ my_target_progress.sold_quantity }}</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow">
+            <p class="text-sm text-gray-500">Daily / Weekly Target</p>
+            <p class="text-2xl font-semibold">{{ my_target_progress.daily_target|floatformat:1 }} / {{ my_target_progress.weekly_target|floatformat:1 }}</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow">
+            <p class="text-sm text-gray-500">Balance</p>
+            <p class="text-2xl font-semibold {% if my_target_progress.balance > 0 %}text-depot-brick{% else %}text-depot-moss{% endif %}">
+                {% if my_target_progress.balance > 0 %}{{ my_target_progress.balance }} to go{% else %}Met{% endif %}
+            </p>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white p-5 rounded shadow text-sm text-gray-500 mb-8">No target has been set for you this month yet.</div>
+    {% endif %}
+
+    <h2 class="font-semibold text-lg mb-3">My Open Loads</h2>
+    <div class="bg-white rounded shadow divide-y">
+        {% for load in my_open_loads %}
+        <div class="px-4 py-3 flex items-center justify-between text-sm">
+            <a href="{% url 'operations:load_detail' load.pk %}" class="font-medium hover:underline">{{ load.load_number }}</a>
+            <span class="text-gray-500">{{ load.depot.name }} &middot; {{ load.load_date }}</span>
+        </div>
+        {% empty %}
+        <div class="px-4 py-6 text-gray-500 text-sm">No open loads right now.</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+{% elif no_depot_assigned %}
+    <div class="bg-white p-6 rounded shadow text-sm text-gray-600">
+        No depot is assigned to your account yet, so there are no depot KPIs to show.
+        Contact a Super Admin to get a depot assigned.
+    </div>
+
+{% elif territory_comparison %}
+    {# Territory Manager: depot ranking within their territory over a chosen timeframe #}
+    <p class="text-sm text-gray-500 mb-1">{{ territory_comparison.territory }}</p>
+    {% include "partials/date_range_form.html" %}
+
+    <h2 class="font-semibold text-lg mb-3">Depot Ranking (Net Profit, {{ date_from }} to {{ date_to }})</h2>
+    <div class="bg-white rounded shadow divide-y">
+        {% for row in territory_comparison.depots %}
+        <div class="px-4 py-3 flex items-center justify-between text-sm">
+            <span class="font-medium">{{ forloop.counter }}. {{ row.depot }}</span>
+            <span class="{% if row.net_profit < 0 %}text-red-600{% else %}text-green-700{% endif %}">
+                &#8358;{{ row.net_profit }}
+                <span class="text-gray-400 font-normal">
+                    (reb &#8358;{{ row.total_rebates }} &middot; exp &#8358;{{ row.total_expenses }})
+                </span>
+            </span>
+        </div>
+        {% empty %}
+        <div class="px-4 py-6 text-gray-500 text-sm">No depots in this territory yet.</div>
+        {% endfor %}
+    </div>
+
+{% elif no_territory_assigned %}
+    <div class="bg-white p-6 rounded shadow text-sm text-gray-600">
+        No territory is assigned to your account yet, so there's no depot comparison to show.
+        Contact a Super Admin to get a territory assigned.
+    </div>
+
+{% elif all_territory_comparisons %}
+    {# Super Admin: same ranking, one table per territory, business-wide, over a chosen timeframe #}
+    {% include "partials/date_range_form.html" %}
+    <p class="text-sm text-gray-500 mb-6">{{ date_from }} to {{ date_to }} &middot; all territories</p>
+
+    {% for comparison in all_territory_comparisons %}
+    <h2 class="font-semibold text-lg mb-3">{{ comparison.territory }}</h2>
+    <div class="bg-white rounded shadow divide-y mb-8">
+        {% for row in comparison.depots %}
+        <div class="px-4 py-3 flex items-center justify-between text-sm">
+            <span class="font-medium">{{ forloop.counter }}. {{ row.depot }}</span>
+            <span class="{% if row.net_profit < 0 %}text-red-600{% else %}text-green-700{% endif %}">
+                &#8358;{{ row.net_profit }}
+                <span class="text-gray-400 font-normal">
+                    (reb &#8358;{{ row.total_rebates }} &middot; exp &#8358;{{ row.total_expenses }})
+                </span>
+            </span>
+        </div>
+        {% empty %}
+        <div class="px-4 py-6 text-gray-500 text-sm">No depots in this territory yet.</div>
+        {% endfor %}
+    </div>
+    {% empty %}
+    <div class="bg-white p-6 rounded shadow text-sm text-gray-600">No territories exist yet.</div>
+    {% endfor %}
+
+{% else %}
+    <div class="bg-white p-6 rounded shadow text-sm text-gray-600">
+        There's no KPI dashboard for your role yet — use the links below to get around DepotFlow.
+    </div>
+{% endif %}
+{% endblock %}

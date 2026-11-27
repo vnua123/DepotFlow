@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">{{ product.name }}</h1>
+    <div class="flex items-center gap-3">
+        {% if can_manage_pricing %}
+        <a href="{% url 'inventory:change_price' product.pk %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            Change Price
+        </a>
+        {% endif %}
+        <a href="{% url 'inventory:product_update' product.pk %}" class="text-sm text-slate-600 hover:underline">Edit</a>
+        <form method="post" action="{% url 'inventory:product_delete' product.pk %}"
+              onsubmit="return confirm('Delete {{ product.name|escapejs }}? This only works if it has no stock receipts, loads, sales, or returns recorded against it.');">
+            {% csrf_token %}
+            <button type="submit" class="text-sm text-depot-brick hover:underline">Delete</button>
+        </form>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div class="bg-white rounded shadow p-6 space-y-3">
+        <h2 class="font-semibold mb-2">Details</h2>
+        <div><span class="text-gray-500 text-sm">SKU</span><div>{{ product.sku }}</div></div>
+        <div><span class="text-gray-500 text-sm">Category</span><div>{{ product.category }}</div></div>
+        <div><span class="text-gray-500 text-sm">Package</span><div>{{ product.package_type }} &middot; {{ product.volume }} &middot; pack of {{ product.pack_size }}</div></div>
+        <div><span class="text-gray-500 text-sm">Status</span><div>{% if product.is_active %}Active{% else %}Inactive{% endif %}</div></div>
+    </div>
+
+    <div class="bg-white rounded shadow p-6 space-y-3">
+        <h2 class="font-semibold mb-2">Current Pricing</h2>
+        <p class="text-xs text-gray-500">Selling price is effective-date based (PriceHistory). Cost reference is informational only — actual acquisition cost is recorded per stock receipt.</p>
+        <div><span class="text-gray-500 text-sm">Current selling price</span><div class="text-lg font-semibold">&#8358;{{ current_selling_price }}</div></div>
+        <div><span class="text-gray-500 text-sm">Cost reference</span><div>&#8358;{{ current_cost_reference }}</div></div>
+    </div>
+</div>
+
+<div class="bg-white rounded shadow mt-6">
+    <h2 class="font-semibold px-6 pt-4">Price History</h2>
+    <div class="divide-y mt-2">
+        {% for entry in price_history %}
+        <div class="px-6 py-3 flex items-center justify-between text-sm">
+            <div>
+                <span class="font-medium">&#8358;{{ entry.selling_price }}</span>
+                <span class="text-gray-500 ml-2">effective {{ entry.effective_from|date:"Y-m-d H:i" }}</span>
+                {% if entry.reason %}<span class="text-gray-400 ml-2">— {{ entry.reason }}</span>{% endif %}
+            </div>
+            <span class="text-gray-500">{{ entry.changed_by|default:"—" }}</span>
+        </div>
+        {% empty %}
+        <div class="px-6 py-6 text-gray-500 text-sm">No price history recorded yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

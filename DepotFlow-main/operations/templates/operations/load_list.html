@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Vehicle Loads - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Vehicle Loads</h1>
+    <div class="flex items-center gap-3">
+        <a href="{% url 'operations:vehicle_list' %}" class="text-sm text-slate-600 hover:underline">Vehicles</a>
+        {% if can_manage %}<a href="{% url 'operations:load_create' %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            New Vehicle Load
+        </a>{% endif %}
+    </div>
+</div>
+
+<div class="bg-white rounded shadow divide-y">
+    {% for load in loads %}
+    <div class="px-4 py-3 flex items-center justify-between">
+        <div>
+            <a href="{% url 'operations:load_detail' load.pk %}" class="font-medium hover:underline">{{ load.load_number }}</a>
+            <span class="text-sm text-gray-500 ml-2">{{ load.salesman.name }} &middot; {{ load.vehicle.registration_number }} &middot; {{ load.load_date }}</span>
+        </div>
+        <span class="text-sm {% if load.is_closed %}text-gray-400{% else %}text-green-700{% endif %}">
+            {% if load.is_closed %}Closed{% else %}Open{% endif %}
+        </span>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No vehicle loads yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

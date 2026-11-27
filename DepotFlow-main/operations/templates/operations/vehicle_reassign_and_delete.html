@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Reassign & Delete {{ vehicle.registration_number }} - DepotFlow{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-1">Reassign &amp; Delete {{ vehicle.registration_number }}</h1>
+<p class="text-sm text-gray-500 mb-6">
+    {{ vehicle.vehicle_name }} &middot; {{ vehicle.depot.name }}
+</p>
+
+<div class="bg-white p-6 rounded shadow max-w-2xl">
+    <p class="text-sm text-gray-600 mb-6">
+        This vehicle is still assigned to the salesman/salesmen below. Pick a
+        replacement for each — an existing vehicle, or fill in details for a
+        brand new one — and this vehicle will be deleted once everyone's
+        reassigned.
+    </p>
+
+    {% if form.non_field_errors %}
+    <div class="bg-depot-brick/10 border border-depot-brick/20 text-depot-brick text-sm rounded px-4 py-3 mb-4">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="divide-y">
+            {% for row in form.rows %}
+            <div class="py-4">
+                <p class="font-medium mb-3">{{ row.salesman.name }}</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ row.existing.label }}</label>
+                        {{ row.existing }}
+                        {% if row.existing.errors %}
+                        <p class="text-xs text-depot-brick mt-1">{{ row.existing.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs text-gray-500 mb-1">Or add a new vehicle</label>
+                        <div class="flex gap-2">
+                            {{ row.new_registration }}
+                            {{ row.new_name }}
+                            {{ row.new_capacity }}
+                        </div>
+                        {% if row.new_registration.errors %}
+                        <p class="text-xs text-depot-brick mt-1">{{ row.new_registration.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="mt-6 bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            Reassign &amp; Delete Vehicle
+        </button>
+        <a href="{% url 'operations:vehicle_list' %}" class="ml-2 text-sm text-gray-600 hover:underline">Cancel</a>
+    </form>
+</div>
+{% endblock %}

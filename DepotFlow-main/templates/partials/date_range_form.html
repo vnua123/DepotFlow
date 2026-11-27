@@ -1,0 +1,21 @@
+<form method="get" class="flex flex-wrap items-end gap-3 mb-6">
+    <div>
+        <label class="block text-xs text-gray-500 mb-1">From</label>
+        <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}"
+               class="rounded border border-stone-300 text-sm px-2 py-1.5">
+    </div>
+    <div>
+        <label class="block text-xs text-gray-500 mb-1">To</label>
+        <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}"
+               class="rounded border border-stone-300 text-sm px-2 py-1.5">
+    </div>
+    <button type="submit" class="bg-slate-800 text-white px-3 py-1.5 rounded text-sm hover:bg-slate-700">
+        Apply
+    </button>
+    <a href="?date_from={{ today|date:'Y-m-d' }}&date_to={{ today|date:'Y-m-d' }}"
+       class="text-sm text-slate-600 hover:underline">Today</a>
+    <a href="?date_from={{ week_start|date:'Y-m-d' }}&date_to={{ today|date:'Y-m-d' }}"
+       class="text-sm text-slate-600 hover:underline">This Week</a>
+    <a href="?date_from={{ month_start|date:'Y-m-d' }}&date_to={{ today|date:'Y-m-d' }}"
+       class="text-sm text-slate-600 hover:underline">Month to Date</a>
+</form>

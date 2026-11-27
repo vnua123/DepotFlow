@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Supplier Payments - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Supplier Payments</h1>
+    {% if can_record %}<a href="{% url 'finance:supplier_payment_create' %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+        New Supplier Payment
+    </a>{% endif %}
+</div>
+
+<div class="bg-white rounded shadow divide-y">
+    {% for payment in payments %}
+    <div class="px-4 py-3 flex items-center justify-between">
+        <div>
+            <span class="font-medium">{{ payment.reference_number }}</span>
+            <span class="text-sm text-gray-500 ml-2">
+                {{ payment.supplier.name }} &middot; {{ payment.depot.name }} &middot; {{ payment.payment_date }}
+                &middot; &#8358;{{ payment.amount }}
+            </span>
+        </div>
+        <div class="text-sm">
+            {% if payment.is_reversed %}
+                <span class="text-gray-400">Reversed</span>
+            {% elif can_approve %}
+                <a href="{% url 'finance:supplier_payment_reverse' payment.pk %}" class="text-red-600 hover:underline">Reverse</a>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No supplier payments recorded yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

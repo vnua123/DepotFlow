@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Vehicles - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Vehicles</h1>
+    <div class="flex items-center gap-3">
+        <a href="{% url 'operations:salesman_list' %}" class="text-sm text-slate-600 hover:underline">Salesmen</a>
+        <a href="{% url 'operations:load_list' %}" class="text-sm text-slate-600 hover:underline">Vehicle Loads</a>
+        {% if can_manage %}<a href="{% url 'operations:vehicle_create' %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            New Vehicle
+        </a>{% endif %}
+    </div>
+</div>
+
+<div class="bg-white rounded shadow divide-y">
+    {% for vehicle in vehicles %}
+    <div class="px-4 py-3 flex items-center justify-between">
+        <div>
+            <span class="font-medium">{{ vehicle.registration_number }}</span>
+            <span class="text-sm text-gray-500 ml-2">{{ vehicle.vehicle_name }} &middot; {{ vehicle.depot.name }}</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm {% if vehicle.is_active %}text-green-700{% else %}text-gray-400{% endif %}">
+                {% if vehicle.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+            {% if can_manage %}<a href="{% url 'operations:vehicle_update' vehicle.pk %}" class="text-sm text-slate-600 hover:underline">Edit</a>
+            <form method="post" action="{% url 'operations:vehicle_delete' vehicle.pk %}"
+                  onsubmit="return confirm('Delete {{ vehicle.registration_number|escapejs }}? If it\'s still assigned to a salesman, you\'ll be asked to reassign them first.');">
+                {% csrf_token %}
+                <button type="submit" class="text-sm text-depot-brick hover:underline">Delete</button>
+            </form>{% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No vehicles yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

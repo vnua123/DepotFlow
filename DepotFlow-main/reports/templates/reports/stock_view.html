@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Stock View - DepotFlow{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-semibold">Stock View</h1>
+        <p class="text-stone-500 text-sm mt-1">Current stock balance, valued at acquisition cost.</p>
+    </div>
+
+    {% if depots|length > 1 %}
+    <form method="get" class="flex items-center gap-2">
+        <label for="id_depot_filter" class="text-sm text-stone-500">Depot</label>
+        <select id="id_depot_filter" name="depot" onchange="this.form.submit()"
+                class="rounded-md border border-stone-300 text-sm px-3 py-2">
+            {% for d in depots %}
+            <option value="{{ d.id }}" {% if depot and d.id == depot.id %}selected{% endif %}>{{ d.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    {% endif %}
+</div>
+
+{% if not depot %}
+<div class="bg-white border border-stone-200 rounded-lg p-6 text-sm text-stone-600">
+    No depots exist yet.
+</div>
+{% else %}
+
+<div class="mb-4">
+    <input type="text" id="id_stock_search" placeholder="Search by SKU or product name…"
+           class="w-full sm:w-80 rounded-md border border-stone-300 text-sm px-3 py-2">
+</div>
+
+<div class="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+    <table class="w-full text-sm" id="stock-table">
+        <thead>
+            <tr class="text-left text-stone-500 border-b border-stone-200">
+                <th class="px-4 py-3 font-medium">SKU</th>
+                <th class="px-4 py-3 font-medium">Product</th>
+                <th class="px-4 py-3 font-medium text-right">Stock Balance</th>
+                <th class="px-4 py-3 font-medium text-right">Acquisition Cost</th>
+                <th class="px-4 py-3 font-medium text-right">Selling Price</th>
+                <th class="px-4 py-3 font-medium text-right">Stock Value</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-100">
+            {% for row in report.products %}
+            <tr data-stock-row data-search="{{ row.sku }} {{ row.name }}"
+                class="{% if row.stock_balance <= 0 %}text-stone-400{% endif %}">
+                <td class="px-4 py-2 tabular-nums">{{ row.sku }}</td>
+                <td class="px-4 py-2">{{ row.name }}</td>
+                <td class="px-4 py-2 text-right tabular-nums">{{ row.stock_balance }}</td>
+                <td class="px-4 py-2 text-right tabular-nums">&#8358;{{ row.acquisition_cost }}</td>
+                <td class="px-4 py-2 text-right tabular-nums">&#8358;{{ row.selling_price }}</td>
+                <td class="px-4 py-2 text-right tabular-nums">&#8358;{{ row.inventory_value }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="px-4 py-6 text-center text-stone-500">
+                    No products have moved through this depot yet.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        {% if report.products %}
+        <tfoot>
+            <tr class="border-t border-stone-200 font-medium">
+                <td class="px-4 py-3" colspan="5">Total stock value</td>
+                <td class="px-4 py-3 text-right tabular-nums">&#8358;{{ total_value }}</td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+</div>
+
+<script>
+    document.getElementById('id_stock_search').addEventListener('input', function (event) {
+        var query = event.target.value.trim().toLowerCase();
+        document.querySelectorAll('[data-stock-row]').forEach(function (row) {
+            var haystack = (row.dataset.search || '').toLowerCase();
+            row.classList.toggle('hidden', query !== '' && haystack.indexOf(query) === -1);
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

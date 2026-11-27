@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Sales Targets - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Sales Targets</h1>
+    {% if can_set_targets %}
+    <a href="{% url 'operations:target_create' %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+        Set Target
+    </a>
+    {% endif %}
+</div>
+
+<div class="bg-white rounded shadow divide-y">
+    {% for target in targets %}
+    <div class="px-4 py-3 flex items-center justify-between">
+        <div>
+            <span class="font-medium">{{ target.salesman.name }}</span>
+            <span class="text-sm text-gray-500 ml-2">
+                {{ target.salesman.depot.name }} &middot; {{ target.get_month_display }} {{ target.year }}
+            </span>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+            <span>{{ target.target_quantity }} units/month</span>
+            <span class="text-gray-500">{{ target.daily_target|floatformat:1 }}/day &middot; {{ target.weekly_target|floatformat:1 }}/week</span>
+            {% if can_set_targets %}
+            <a href="{% url 'operations:target_update' target.pk %}" class="text-slate-600 hover:underline">Edit</a>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No sales targets have been set yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

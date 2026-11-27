@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Close {{ load.load_number }} - DepotFlow{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-1">Close {{ load.load_number }}</h1>
+<p class="text-sm text-gray-500 mb-6">
+    {{ load.salesman.name }} &middot; {{ load.depot.name }} &middot; {{ load.load_date }}
+</p>
+
+<div class="bg-white p-6 rounded shadow">
+    <p class="text-sm text-gray-600 mb-4">
+        For each product, Sold + Returned must add up to exactly what's still
+        remaining. This records today's sale and any return, then closes the load —
+        there's no separate "new sale" step anymore.
+    </p>
+
+    {% if form.non_field_errors %}
+    <div class="bg-depot-brick/10 border border-depot-brick/20 text-depot-brick text-sm rounded px-4 py-3 mb-4">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="divide-y">
+            <div class="py-2 grid grid-cols-6 gap-4 text-xs font-medium text-gray-500 uppercase">
+                <span class="col-span-2">Product</span>
+                <span>Remaining</span>
+                <span>Sold</span>
+                <span>Returned</span>
+                <span>Condition</span>
+            </div>
+            {% for row in form.rows %}
+            <div class="py-3 grid grid-cols-6 gap-4 items-start text-sm">
+                <span class="col-span-2 pt-1">{{ row.product.name }}</span>
+                <span class="pt-1">{{ row.remaining }}</span>
+                <span>
+                    {{ row.sold }}
+                    {% if row.sold.errors %}
+                    <p class="text-xs text-depot-brick mt-1">{{ row.sold.errors|join:", " }}</p>
+                    {% endif %}
+                </span>
+                <span>{{ row.returned }}</span>
+                <span>{{ row.condition }}</span>
+            </div>
+            {% empty %}
+            <div class="py-6 text-gray-500 text-sm">No items on this load.</div>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="mt-6 bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+            Record &amp; Close Load
+        </button>
+        <a href="{% url 'operations:load_detail' load.pk %}" class="ml-2 text-sm text-gray-600 hover:underline">Cancel</a>
+    </form>
+</div>
+{% endblock %}

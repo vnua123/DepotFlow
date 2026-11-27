@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Territories - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Territories</h1>
+    {% if can_manage_territories %}<a href="{% url 'depots:territory_create' %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">
+        New Territory
+    </a>{% endif %}
+</div>
+
+<div class="bg-white rounded shadow divide-y">
+    {% for territory in territories %}
+    <div class="px-4 py-3 flex items-center justify-between">
+        <span>{{ territory.name }}</span>
+        {% if can_manage_territories %}<a href="{% url 'depots:territory_update' territory.pk %}" class="text-sm text-slate-600 hover:underline">Edit</a>{% endif %}
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No territories yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

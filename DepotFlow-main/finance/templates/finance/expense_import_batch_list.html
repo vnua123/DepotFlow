@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Expense Imports - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Expense Imports</h1>
+    <div class="flex items-center gap-3">
+        <a href="{% url 'finance:expense_list' %}" class="text-sm text-slate-600 hover:underline">Expenses</a>
+        <a href="{% url 'finance:expense_import' %}" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700">Import from Excel</a>
+    </div>
+</div>
+<div class="bg-white rounded shadow divide-y">
+    {% for b in batches %}
+    <a href="{% url 'finance:expense_import_batch_detail' b.pk %}" class="block px-4 py-3 hover:bg-gray-50">
+        <span class="font-medium">{{ b.file_name }}</span>
+        <span class="text-sm text-gray-500 ml-2">
+            {{ b.depot.name }} &middot; {{ b.created_at|date:"d M Y H:i" }} &middot; {{ b.uploaded_by|default:"—" }}
+            &middot; {{ b.expenses_created }} expenses &middot; &#8358;{{ b.total_amount|floatformat:"2g" }}
+        </span>
+    </a>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No imports yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

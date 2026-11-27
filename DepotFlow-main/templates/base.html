@@ -1,0 +1,370 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DepotFlow{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/styles/choices.min.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'depot-ink': '#181818',
+                        'depot-paper': '#FAFAFA',
+                        'depot-teal': '#E4002B',
+                        'depot-teal-light': '#B0001F',
+                        'depot-amber': '#FFFFFF',
+                        'depot-brick': '#7A0019',
+                        'depot-moss': '#2E7D42',
+                    },
+                    fontFamily: {
+                        display: ['"Poppins"', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/scripts/choices.min.js"></script>
+    <script defer src="{% static 'core/js/product_choices.js' %}"></script>
+    <script defer src="{% static 'core/js/dynamic_formset.js' %}"></script>
+    <script defer src="{% static 'core/js/stock_hint.js' %}"></script>
+
+    <style type="text/tailwindcss">
+        @layer base {
+            h1, h2, h3, h4 {
+                font-family: 'Poppins', sans-serif;
+            }
+            [x-cloak] { display: none !important; }
+            /* Formset DELETE checkboxes are driven by the Remove button
+               in partials/dynamic_formset.html, not shown directly. */
+            [id^="div_id_"][id$="-DELETE"] { display: none; }
+        }
+        @layer components {
+            .nav-link {
+                @apply px-3 py-2 rounded-md text-sm text-stone-100/90 hover:text-white hover:bg-white/10 transition-colors;
+            }
+            .nav-link-active {
+                @apply text-white bg-white/10;
+                box-shadow: inset 0 -2px 0 0 #FFFFFF;
+            }
+            .dropdown-panel {
+                @apply absolute left-0 mt-1 w-48 rounded-md border border-stone-200 bg-white py-1 text-depot-ink shadow-lg z-30;
+            }
+            .dropdown-link {
+                @apply block px-4 py-2 text-sm text-depot-ink/90 hover:bg-depot-paper;
+            }
+            .mobile-section-label {
+                @apply px-4 pt-3 pb-1 text-xs text-stone-400;
+            }
+            .mobile-link {
+                @apply block px-4 py-2 text-sm text-stone-100/90 hover:bg-white/10 hover:text-white;
+            }
+        }
+    </style>
+
+    <style>
+        /* Choices.js ships its own stylesheet (not Tailwind utilities) —
+           these few overrides just line it up with the site palette. */
+        .choices__inner {
+            background-color: #fff;
+            border-color: #E7E5E4;
+            border-radius: 0.375rem;
+            min-height: 2.5rem;
+            padding: 0.375rem 0.75rem;
+        }
+        .choices.is-focused .choices__inner,
+        .choices.is-open .choices__inner {
+            border-color: #E4002B;
+            box-shadow: 0 0 0 1px #E4002B;
+        }
+        .choices__list--dropdown .choices__item--selectable.is-highlighted,
+        .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+            background-color: #FAFAFA;
+            color: #181818;
+        }
+        .choices__list--multiple .choices__item {
+            background-color: #E4002B;
+            border-color: #E4002B;
+        }
+    </style>
+</head>
+<body class="font-sans bg-depot-paper text-depot-ink min-h-screen antialiased overflow-x-auto">
+
+    <header class="bg-depot-teal text-stone-100 relative z-20"
+             x-data="{ mobileOpen: false, depots: false, inventory: false, ops: false, sales: false, finance: false }"
+             @keydown.escape="depots = inventory = ops = sales = finance = mobileOpen = false">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="flex items-center justify-between h-16">
+
+                <a href="{% url 'home' %}" class="flex items-center gap-2 shrink-0">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-depot-amber font-display text-xs font-bold text-depot-teal">DF</span>
+                    <span class="font-display text-lg font-semibold tracking-tight">DepotFlow</span>
+                </a>
+
+                {% if user.is_authenticated %}
+                <nav class="hidden md:flex items-center gap-1 ml-4">
+                    <a href="{% url 'reports:dashboard' %}"
+                       class="nav-link {% if request.resolver_match.view_name == 'reports:dashboard' %}nav-link-active{% endif %}">
+                        Dashboard
+                    </a>
+
+                    {% if nav_show_my_loads %}
+                    <a href="{% url 'operations:my_loads' %}"
+                       class="nav-link {% if request.resolver_match.url_name == 'my_loads' %}nav-link-active{% endif %}">
+                        My Loads
+                    </a>
+                    {% endif %}
+
+                    {% if nav_show_depots %}
+                    <div class="relative" @click.outside="depots = false">
+                        <button type="button" @click="depots = !depots" :aria-expanded="depots"
+                                class="nav-link flex items-center gap-1 {% if request.resolver_match.app_name == 'depots' %}nav-link-active{% endif %}">
+                            Depots
+                            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <div x-show="depots" x-cloak x-transition.opacity.duration.100ms class="dropdown-panel">
+                            <a href="{% url 'depots:depot_list' %}" class="dropdown-link">Depots</a>
+                            {% if nav_manage_territories %}
+                            <a href="{% url 'depots:territory_list' %}" class="dropdown-link">Territories</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if nav_show_stock_view_standalone %}
+                    <a href="{% url 'reports:stock_view' %}"
+                       class="nav-link {% if request.resolver_match.url_name == 'stock_view' %}nav-link-active{% endif %}">
+                        Stock View
+                    </a>
+                    {% endif %}
+
+                    {% if nav_show_inventory %}
+                    <div class="relative" @click.outside="inventory = false">
+                        <button type="button" @click="inventory = !inventory" :aria-expanded="inventory"
+                                class="nav-link flex items-center gap-1 {% if request.resolver_match.app_name == 'inventory' %}nav-link-active{% endif %}">
+                            Inventory
+                            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <div x-show="inventory" x-cloak x-transition.opacity.duration.100ms class="dropdown-panel">
+                            <a href="{% url 'reports:stock_view' %}" class="dropdown-link">Stock View</a>
+                            <a href="{% url 'inventory:product_list' %}" class="dropdown-link">Products</a>
+                            <a href="{% url 'inventory:supplier_list' %}" class="dropdown-link">Suppliers</a>
+                            <a href="{% url 'inventory:stock_receipt_list' %}" class="dropdown-link">Stock Receipts</a>
+                            <a href="{% url 'inventory:promotion_list' %}" class="dropdown-link">Promotions</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if nav_show_operations %}
+                    <div class="relative" @click.outside="ops = false">
+                        <button type="button" @click="ops = !ops" :aria-expanded="ops"
+                                class="nav-link flex items-center gap-1 {% if request.resolver_match.app_name == 'operations' %}nav-link-active{% endif %}">
+                            Operations
+                            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <div x-show="ops" x-cloak x-transition.opacity.duration.100ms class="dropdown-panel">
+                            <a href="{% url 'operations:load_list' %}" class="dropdown-link">Vehicle Loads</a>
+                            <a href="{% url 'operations:vehicle_list' %}" class="dropdown-link">Vehicles</a>
+                            <a href="{% url 'operations:salesman_list' %}" class="dropdown-link">Salesmen</a>
+                            {% if nav_show_targets %}
+                            <a href="{% url 'operations:target_list' %}" class="dropdown-link">Sales Targets</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if nav_show_sales %}
+                    <div class="relative" @click.outside="sales = false">
+                        <button type="button" @click="sales = !sales" :aria-expanded="sales"
+                                class="nav-link flex items-center gap-1 {% if request.resolver_match.app_name == 'sales' %}nav-link-active{% endif %}">
+                            Sales
+                            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <div x-show="sales" x-cloak x-transition.opacity.duration.100ms class="dropdown-panel">
+                            <a href="{% url 'sales:sale_list' %}" class="dropdown-link">Sales</a>
+                            <a href="{% url 'sales:customer_list' %}" class="dropdown-link">Customers</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if nav_show_finance_full %}
+                    <div class="relative" @click.outside="finance = false">
+                        <button type="button" @click="finance = !finance" :aria-expanded="finance"
+                                class="nav-link flex items-center gap-1 {% if request.resolver_match.app_name == 'finance' %}nav-link-active{% endif %}">
+                            Finance
+                            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <div x-show="finance" x-cloak x-transition.opacity.duration.100ms class="dropdown-panel">
+                            <a href="{% url 'finance:expense_list' %}" class="dropdown-link">Expenses</a>
+                            <a href="{% url 'finance:supplier_payment_list' %}" class="dropdown-link">Supplier Payments</a>
+                            <a href="{% url 'finance:supplier_rebate_list' %}" class="dropdown-link">Supplier Rebates</a>
+                            {% if nav_show_nbc_rebates %}
+                            <a href="{% url 'rebates:dashboard' %}" class="dropdown-link">NBC Rebates &amp; Health Checks</a>
+                            {% endif %}
+                            <a href="{% url 'finance:ledger_list' %}" class="dropdown-link">Business Ledger</a>
+                        </div>
+                    </div>
+                    {% elif nav_show_finance_expenses_only %}
+                    <a href="{% url 'finance:expense_list' %}"
+                       class="nav-link {% if request.resolver_match.url_name == 'expense_list' %}nav-link-active{% endif %}">
+                        Finance
+                    </a>
+                    {% elif nav_show_finance_ledger_only %}
+                    <a href="{% url 'finance:ledger_list' %}"
+                       class="nav-link {% if request.resolver_match.url_name == 'ledger_list' %}nav-link-active{% endif %}">
+                        Finance
+                    </a>
+                    {% endif %}
+
+                    {% if user.role == 'TERRITORY_MANAGER' %}
+                    <a href="{% url 'rebates:dashboard' %}"
+                       class="nav-link {% if request.resolver_match.app_name == 'rebates' %}nav-link-active{% endif %}">
+                        NBC Rebates & Health Checks
+                    </a>
+                    {% endif %}
+
+                    {% if nav_show_team %}
+                    <a href="{% url 'accounts:team_list' %}"
+                       class="nav-link {% if request.resolver_match.url_name == 'team_list' %}nav-link-active{% endif %}">
+                        Team
+                    </a>
+                    {% endif %}
+                </nav>
+                {% endif %}
+
+                <div class="hidden md:flex items-center gap-4 text-sm ml-auto">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'accounts:profile' %}" class="hover:text-depot-amber transition-colors">
+                            {{ user.username }}
+                            <span class="text-stone-300">({{ user.get_role_display }})</span>
+                        </a>
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="hover:text-depot-amber transition-colors">Log out</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="hover:text-depot-amber transition-colors">Log in</a>
+                    {% endif %}
+                </div>
+
+                {% if user.is_authenticated %}
+                <button type="button" class="md:hidden ml-auto p-2 -mr-2" @click="mobileOpen = !mobileOpen"
+                        :aria-expanded="mobileOpen" aria-label="Toggle menu">
+                    <svg x-show="!mobileOpen" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/></svg>
+                    <svg x-show="mobileOpen" x-cloak class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div x-show="mobileOpen" x-cloak x-transition.opacity.duration.100ms class="md:hidden border-t border-white/10 pb-3">
+            <a href="{% url 'reports:dashboard' %}" class="mobile-link">Dashboard</a>
+
+            {% if nav_show_my_loads %}
+            <a href="{% url 'operations:my_loads' %}" class="mobile-link">My Loads</a>
+            {% endif %}
+
+            {% if nav_show_depots %}
+            <p class="mobile-section-label">Depots</p>
+            <a href="{% url 'depots:depot_list' %}" class="mobile-link">Depots</a>
+            {% if nav_manage_territories %}
+            <a href="{% url 'depots:territory_list' %}" class="mobile-link">Territories</a>
+            {% endif %}
+            {% endif %}
+
+            {% if nav_show_stock_view_standalone %}
+            <a href="{% url 'reports:stock_view' %}" class="mobile-link">Stock View</a>
+            {% endif %}
+
+            {% if nav_show_inventory %}
+            <p class="mobile-section-label">Inventory</p>
+            <a href="{% url 'reports:stock_view' %}" class="mobile-link">Stock View</a>
+            <a href="{% url 'inventory:product_list' %}" class="mobile-link">Products</a>
+            <a href="{% url 'inventory:supplier_list' %}" class="mobile-link">Suppliers</a>
+            <a href="{% url 'inventory:stock_receipt_list' %}" class="mobile-link">Stock Receipts</a>
+            <a href="{% url 'inventory:promotion_list' %}" class="mobile-link">Promotions</a>
+            {% endif %}
+
+            {% if nav_show_operations %}
+            <p class="mobile-section-label">Operations</p>
+            <a href="{% url 'operations:load_list' %}" class="mobile-link">Vehicle Loads</a>
+            <a href="{% url 'operations:vehicle_list' %}" class="mobile-link">Vehicles</a>
+            <a href="{% url 'operations:salesman_list' %}" class="mobile-link">Salesmen</a>
+            {% if nav_show_targets %}
+            <a href="{% url 'operations:target_list' %}" class="mobile-link">Sales Targets</a>
+            {% endif %}
+            {% endif %}
+
+            {% if nav_show_sales %}
+            <p class="mobile-section-label">Sales</p>
+            <a href="{% url 'sales:sale_list' %}" class="mobile-link">Sales</a>
+            <a href="{% url 'sales:customer_list' %}" class="mobile-link">Customers</a>
+            {% endif %}
+
+            {% if nav_show_finance_full %}
+            <p class="mobile-section-label">Finance</p>
+            <a href="{% url 'finance:expense_list' %}" class="mobile-link">Expenses</a>
+            <a href="{% url 'finance:supplier_payment_list' %}" class="mobile-link">Supplier Payments</a>
+            <a href="{% url 'finance:supplier_rebate_list' %}" class="mobile-link">Supplier Rebates</a>
+            {% if nav_show_nbc_rebates %}
+            <a href="{% url 'rebates:dashboard' %}" class="mobile-link">NBC Rebates &amp; Health Checks</a>
+            {% endif %}
+            <a href="{% url 'finance:ledger_list' %}" class="mobile-link">Business Ledger</a>
+            {% elif nav_show_finance_expenses_only %}
+            <p class="mobile-section-label">Finance</p>
+            <a href="{% url 'finance:expense_list' %}" class="mobile-link">Expenses</a>
+            {% elif nav_show_finance_ledger_only %}
+            <p class="mobile-section-label">Finance</p>
+            <a href="{% url 'finance:ledger_list' %}" class="mobile-link">Business Ledger</a>
+            {% endif %}
+
+            {% if user.role == 'TERRITORY_MANAGER' %}
+            <p class="mobile-section-label">Performance & Rebates</p>
+            <a href="{% url 'rebates:dashboard' %}" class="mobile-link">NBC Rebates & Health Checks</a>
+            {% endif %}
+
+            <p class="mobile-section-label">Account</p>
+            {% if nav_show_team %}
+            <a href="{% url 'accounts:team_list' %}" class="mobile-link">Team</a>
+            {% endif %}
+            <a href="{% url 'accounts:profile' %}" class="mobile-link">
+                {{ user.username }} ({{ user.get_role_display }})
+            </a>
+            <form method="post" action="{% url 'logout' %}" class="px-4 pt-2">
+                {% csrf_token %}
+                <button type="submit" class="text-sm text-stone-100/90 hover:text-white">Log out</button>
+            </form>
+        </div>
+        {% endif %}
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {% if messages %}
+            <div class="mb-6 space-y-2">
+                {% for message in messages %}
+                    <div class="px-4 py-3 rounded-md border text-sm
+                        {% if message.tags == 'error' %}bg-depot-brick/10 text-depot-brick border-depot-brick/20
+                        {% elif message.tags == 'success' %}bg-depot-moss/10 text-depot-moss border-depot-moss/20
+                        {% else %}bg-depot-teal/10 text-depot-teal border-depot-teal/20{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

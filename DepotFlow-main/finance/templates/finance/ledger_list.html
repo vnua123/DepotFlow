@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Business Ledger - DepotFlow{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-4 mb-2">
+    <h1 class="text-2xl font-semibold">Business Ledger</h1>
+
+    {% if can_switch and depots|length > 1 %}
+    <form method="get" class="flex items-center gap-2">
+        <label for="id_ledger_depot" class="text-sm text-stone-500">Depot</label>
+        <select id="id_ledger_depot" name="depot" onchange="this.form.submit()"
+                class="rounded-md border border-stone-300 text-sm px-3 py-2">
+            {% for d in depots %}
+            <option value="{{ d.id }}" {% if depot and d.id == depot.id %}selected{% endif %}>{{ d.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    {% endif %}
+</div>
+
+{% if not depot %}
+<div class="bg-white border border-stone-200 rounded-lg p-6 text-sm text-gray-600">
+    No depot is assigned to your account, so there's no ledger to show here. Contact a
+    Super Admin or your Commercial Manager if you need access to a depot's ledger.
+</div>
+{% else %}
+<p class="text-sm text-gray-600 mb-6">
+    {{ depot.name }} &middot; most recent 200 entries. Read-only — corrections happen via reversal on the source record.
+</p>
+
+<div class="bg-white rounded shadow divide-y">
+    <div class="px-4 py-2 grid grid-cols-4 gap-4 text-xs font-medium text-gray-500 uppercase">
+        <span>Date</span>
+        <span>Type</span>
+        <span>Reference</span>
+        <span>Amount</span>
+    </div>
+    {% for entry in ledger_entries %}
+    <div class="px-4 py-3 grid grid-cols-4 gap-4 text-sm items-center">
+        <span>{{ entry.transaction_date }}</span>
+        <span>{{ entry.get_transaction_type_display }}</span>
+        <span class="text-gray-500">{{ entry.reference|default:"—" }}</span>
+        <span class="font-medium {% if entry.amount < 0 %}text-red-600{% endif %}">&#8358;{{ entry.amount }}</span>
+    </div>
+    {% empty %}
+    <div class="px-4 py-6 text-gray-500 text-sm">No ledger entries yet for this depot.</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
